@@ -1,0 +1,348 @@
+<html>
+
+<head>
+    <title>Tetris: 1/16</title>
+</head>
+
+<body>
+    <canvas id="tetris" width="800" height="600"></canvas>
+    <script>
+        let canvas = document.getElementById('tetris');
+        let context = canvas.getContext('2d');
+
+        let width = 10,
+            height = 20,
+            scale = 25,
+            downTimer = 0;
+
+        let grid = new Array(width * height);
+        let pieces = 'iotszjl';
+        let pieceMatrices = {
+            i0: [0, 0, 1, 0,
+                0, 0, 1, 0,
+                0, 0, 1, 0,
+                0, 0, 1, 0
+            ],
+            i1: [0, 0, 0, 0,
+                0, 0, 0, 0,
+                1, 1, 1, 1,
+                0, 0, 0, 0
+            ],
+            i2: [0, 1, 0, 0,
+                0, 1, 0, 0,
+                0, 1, 0, 0,
+                0, 1, 0, 0
+            ],
+            i3: [0, 0, 0, 0,
+                1, 1, 1, 1,
+                0, 0, 0, 0,
+                0, 0, 0, 0
+            ],
+            o0: [0, 0, 0, 0,
+                0, 1, 1, 0,
+                0, 1, 1, 0,
+                0, 0, 0, 0
+            ],
+            o1: [0, 0, 0, 0,
+                0, 1, 1, 0,
+                0, 1, 1, 0,
+                0, 0, 0, 0
+            ],
+            o2: [0, 0, 0, 0,
+                0, 1, 1, 0,
+                0, 1, 1, 0,
+                0, 0, 0, 0
+            ],
+            o3: [0, 0, 0, 0,
+                0, 1, 1, 0,
+                0, 1, 1, 0,
+                0, 0, 0, 0
+            ],
+            t0: [0, 1, 0,
+                1, 1, 1,
+                0, 0, 0
+            ],
+            t1: [0, 1, 0,
+                0, 1, 1,
+                0, 1, 0
+            ],
+            t2: [0, 0, 0,
+                1, 1, 1,
+                0, 1, 0
+            ],
+            t3: [0, 1, 0,
+                1, 1, 0,
+                0, 1, 0
+            ],
+            s0: [0, 1, 1,
+                1, 1, 0,
+                0, 0, 0
+            ],
+            s1: [0, 1, 0,
+                0, 1, 1,
+                0, 0, 1
+            ],
+            s2: [0, 1, 1,
+                1, 1, 0,
+                0, 0, 0
+            ],
+            s3: [0, 1, 0,
+                0, 1, 1,
+                0, 0, 1
+            ],
+            z0: [1, 1, 0,
+                0, 1, 1,
+                0, 0, 0
+            ],
+            z1: [0, 0, 1,
+                0, 1, 1,
+                0, 1, 0
+            ],
+            z2: [1, 1, 0,
+                0, 1, 1,
+                0, 0, 0
+            ],
+            z3: [0, 0, 1,
+                0, 1, 1,
+                0, 1, 0
+            ],
+            j0: [1, 0, 0,
+                1, 1, 1,
+                0, 0, 0
+            ],
+            j1: [0, 1, 1,
+                0, 1, 0,
+                0, 1, 0
+            ],
+            j2: [0, 0, 0,
+                1, 1, 1,
+                0, 0, 1
+            ],
+            j3: [0, 1, 0,
+                0, 1, 0,
+                1, 1, 0
+            ],
+            l0: [0, 0, 0,
+                1, 1, 1,
+                1, 0, 0
+            ],
+            l1: [1, 1, 0,
+                0, 1, 0,
+                0, 1, 0
+            ],
+            l2: [0, 0, 1,
+                1, 1, 1,
+                0, 0, 0
+            ],
+            l3: [0, 1, 0,
+                0, 1, 0,
+                0, 1, 1
+            ],
+        }
+        let pieceColors = {
+            i: 'lightblue',
+            o: 'yellow',
+            t: 'purple',
+            s: 'green',
+            z: 'red',
+            j: 'blue',
+            l: 'orange'
+        }
+        let current = {
+            piece: '',
+            matrix: [],
+            rotation: 0,
+            x: 5,
+            y: 0
+        };
+
+        window.onload = () => {
+            addPiece();
+            loop();
+        }
+
+        document.addEventListener('keydown', event => {
+            if (event.key == 'a') movePiece(-1, 0);
+            if (event.key == 'd') movePiece(1, 0);
+            if (event.key == 'q') rotatePiece(-1);
+            if (event.key == 'e') rotatePiece(1);
+            if (event.key == 's') moveDown();
+        })
+
+        let loop = () => {
+            for (let h = 0; h < height; h++) {
+                for (let w = 0; w < width; w++) {
+                    if (grid[h * width + w]) {
+                        context.fillStyle = pieceColors[grid[h * width + w]];
+                    } else {
+                        context.fillStyle = 'white';
+                    }
+                    context.fillRect(w * scale, h * scale, scale, scale);
+
+                    context.strokeStyle = '#000';
+                    context.strokeRect(w * scale, h * scale, scale, scale);
+                }
+            }
+
+            if (current.matrix.length == 9) {
+                for (let i = 0; i < 3; i++) {
+                    for (let j = 0; j < 3; j++) {
+                        if (current.matrix[i * 3 + j] != 0) {
+                            context.fillStyle = pieceColors[current.piece];
+                            context.fillRect((j + current.x) * scale, (i + current.y) * scale, scale, scale);
+                        }
+                    }
+                }
+            } else {
+                for (let i = 0; i < 4; i++) {
+                    for (let j = 0; j < 4; j++) {
+                        if (current.matrix[i * 4 + j] == 1) {
+                            context.fillStyle = pieceColors[current.piece];
+                            context.fillRect((j + current.x) * scale, (i + current.y) * scale, scale, scale);
+                        }
+                    }
+                }
+            }
+
+            if (downTimer > 30) {
+                downTimer = 0;
+                moveDown();
+            }
+
+            downTimer++;
+
+            requestAnimationFrame(loop);
+        }
+
+        let addPiece = () => {
+            let piece = pieces.charAt(Math.floor(Math.random() * pieces.length));
+            current.piece = piece;
+            current.rotation = 0;
+            current.matrix = pieceMatrices[current.piece + current.rotation];
+            current.x = 5;
+            current.y = 0;
+        }
+
+        let movePiece = x => {
+            let move = true;
+            if (current.matrix.length == 9) {
+                for (let i = 0; i < 3; i++) {
+                    for (let j = 0; j < 3; j++) {
+                        if (current.matrix[i * 3 + j] == 1) {
+                            if (checkPiece(current.x + j + x, current.y + i)) {
+                                move = false;
+                                break;
+                            }
+                        }
+                    }
+                }
+            } else {
+                for (let i = 0; i < 4; i++) {
+                    for (let j = 0; j < 4; j++) {
+                        if (current.matrix[i * 4 + j] == 1) {
+                            if (checkPiece(current.x + j + x, current.y + i)) {
+                                move = false;
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (move) current.x += x;
+        }
+
+        let moveDown = () => {
+            let move = true;
+            if (current.matrix.length == 9) {
+                for (let i = 0; i < 3; i++) {
+                    for (let j = 0; j < 3; j++) {
+                        if (current.matrix[i * 3 + j] == 1) {
+                            if (checkPiece(current.x + j, current.y + i + 1)) {
+                                move = false;
+                                break;
+                            }
+                        }
+                    }
+                }
+            } else {
+                for (let i = 0; i < 4; i++) {
+                    for (let j = 0; j < 4; j++) {
+                        if (current.matrix[i * 4 + j] == 1) {
+                            if (checkPiece(current.x + j, current.y + i + 1)) {
+                                move = false;
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (move) {
+                current.y++;
+            } else {
+                if (current.matrix.length == 9) {
+                    for (let i = 0; i < 3; i++) {
+                        for (let j = 0; j < 3; j++) {
+                            if (current.matrix[i * 3 + j] == 1) {
+                                let x = current.x + j;
+                                let y = current.y + i;
+                                grid[y * width + x] = current.piece;
+                            }
+                        }
+                    }
+                } else {
+                    for (let i = 0; i < 4; i++) {
+                        for (let j = 0; j < 4; j++) {
+                            if (current.matrix[i * 4 + j] == 1) {
+                                let x = current.x + j;
+                                let y = current.y + i;
+                                grid[y * width + x] = current.piece;
+                            }
+                        }
+                    }
+                }
+
+                checkRows();
+                addPiece();
+            }
+        }
+
+        let checkPiece = (x, y) => {
+            if (x < 0 || x >= width || y < 0 || y >= height) return true;
+            return grid[y * width + x] != null;
+        }
+
+        let rotatePiece = dir => {
+            current.rotation += dir;
+            if (current.rotation < 0) {
+                current.rotation = 3;
+            }
+            if (current.rotation > 3) {
+                current.rotation = 0;
+            }
+            current.matrix = pieceMatrices[current.piece + current.rotation];
+        }
+
+        let checkRows = () => {
+            for (let i = 0; i < height; i++) {
+                let empty = false;
+                for (let j = 0; j < width; j++) {
+                    if (!checkPiece(j, i)) empty = true;
+                }
+                if (!empty) {
+                    for (let j = 0; j < width; j++) {
+                        grid[i * width + j] = null;
+                    }
+                    for (let k = i; k >= 0; k--) {
+                        for (let j = 0; j < width; j++) {
+                            grid[k * width + j] = grid[(k - 1) * width + j];
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+</body>
+
+</html>
