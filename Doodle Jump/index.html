@@ -1,0 +1,91 @@
+<html>
+  <head>
+    <title>Doodle Jump: 2/16</title>
+  </head>
+  <body>
+    <canvas id="doodle-jump" width="400" height="600"></canvas>
+    <script>
+      let canvas = document.getElementById('doodle-jump');
+      let context = canvas.getContext('2d');
+
+      let platforms = [];
+      let player = {
+        x: 200,
+        y: 300,
+        vely: 0,
+        size: 50,
+        dir: 0,
+      };
+
+      window.onload = () => {
+        for (let i = 0; i < 10; i++) {
+          platforms[i] = {
+            x: Math.floor(Math.random() * (canvas.width - 150)),
+            y: Math.floor(Math.random() * canvas.height),
+          };
+        }
+
+        loop();
+      };
+
+      document.addEventListener('keydown', event => {
+        if (event.key == 'a') player.dir = -1;
+        if (event.key == 'd') player.dir = 1;
+      });
+
+      document.addEventListener('keyup', event => {
+        if (event.key == 'a' || event.key == 'd') player.dir = 0;
+      });
+
+      let loop = () => {
+        context.fillStyle = '#5588ff';
+        context.fillRect(0, 0, canvas.width, canvas.height);
+
+        player.vely += 0.2;
+        player.y += player.vely;
+
+        if (player.y + player.size > canvas.height) player.vely -= 5;
+
+        player.x += 5 * player.dir;
+
+        if (player.x > canvas.width) player.x = -player.size;
+        if (player.x + player.size < 0) player.x = canvas.width;
+
+        for (let i = 0; i < platforms.length; i++) {
+          if (
+            player.x + player.size > platforms[i].x &&
+            player.x < platforms[i].x + 150 &&
+            player.y + player.size > platforms[i].y &&
+            player.y + player.size < platforms[i].y + 20 &&
+            player.vely > 0
+          ) {
+            player.vely -= 15;
+          }
+        }
+
+        if (player.y < 100) {
+          player.y = 100;
+          for (let i = 0; i < platforms.length; i++) {
+            platforms[i].y -= player.vely;
+            if (platforms[i].y > canvas.height) {
+              platforms[i] = {
+                x: Math.floor(Math.random() * (canvas.width - 150)),
+                y: 0,
+              };
+            }
+          }
+        }
+
+        for (let i = 0; i < platforms.length; i++) {
+          context.fillStyle = 'green';
+          context.fillRect(platforms[i].x, platforms[i].y, 150, 20);
+        }
+
+        context.fillStyle = 'red';
+        context.fillRect(player.x, player.y, player.size, player.size);
+
+        requestAnimationFrame(loop);
+      };
+    </script>
+  </body>
+</html>

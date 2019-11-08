@@ -1,0 +1,154 @@
+<html>
+
+<head>
+    <title>Minesweeper: 3/16</title>
+</head>
+
+<body>
+    <canvas id="minesweeper" width="600" height="600"></canvas>
+
+    <script>
+        let canvas = document.getElementById('minesweeper');
+        let context = canvas.getContext('2d');
+
+        let scale = 50,
+            width = canvas.width / scale,
+            height = canvas.height / scale;
+        let grid = new Array(width * height);
+        let gameOver = false;
+
+        let checkNeighbor = (x, y) => {
+            if (x < 0 || x >= width || y < 0 || y >= height) return -1;
+            return grid[y * width + x];
+        }
+
+        let check = (x, y) => {
+            let place = checkNeighbor(x, y);
+            if (place != -1 && !place.revealed && !place.mine) reveal(x, y);
+        }
+
+        let reveal = (x, y) => {
+            if (checkNeighbor(x, y) != -1) {
+                let place = checkNeighbor(x, y);
+                place.revealed = true;
+                gameOver = place.mine;
+                if (place.neighbors == 0) {
+                    check(x - 1, y - 1);
+                    check(x, y - 1);
+                    check(x + 1, y - 1);
+                    check(x - 1, y);
+                    check(x + 1, y);
+                    check(x - 1, y + 1);
+                    check(x, y + 1);
+                    check(x + 1, y + 1);
+                }
+            }
+        }
+
+        for (let y = 0; y < height; y++) {
+            for (let x = 0; x < width; x++) {
+                grid[y * width + x] = {
+                    x: x * scale,
+                    y: y * scale,
+                    mine: (Math.random() < 0.15),
+                    revealed: false,
+                    flagged: false,
+                    neighbors: 0
+                }
+            }
+        }
+
+        for (let y = 0; y < height; y++) {
+            for (let x = 0; x < width; x++) {
+                for (let i = -1; i <= 1; i++) {
+                    for (let j = -1; j <= 1; j++) {
+                        if (checkNeighbor(x + i, y + j) != -1 && checkNeighbor(x + i, y + j).mine)
+                            grid[y * width + x].neighbors++;
+                    }
+                }
+            }
+        }
+
+        document.addEventListener('mousedown', event => {
+            if (!gameOver) {
+                let rect = canvas.getBoundingClientRect();
+                let mouseX = event.clientX - rect.left;
+                let mouseY = event.clientY - rect.top;
+                for (let y = 0; y < height; y++) {
+                    for (let x = 0; x < width; x++) {
+                        let place = grid[y * width + x];
+                        if (mouseX > place.x && mouseX < place.x + scale && mouseY > place.y && mouseY < place
+                            .y +
+                            scale) {
+                            if (event.button == 0) {
+                                if (!place.revealed) reveal(x, y);
+                            } else if (event.button == 1) {
+                                place.flagged = !place.flagged;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        window.onload = () => {
+            loop();
+        }
+
+        let loop = () => {
+            context.fillStyle = '#fff';
+            context.fillRect(0, 0, canvas.width, canvas.height);
+
+            for (let i = 0; i < grid.length; i++) {
+                if (grid[i].revealed) {
+                    context.fillStyle = '#fff';
+                    context.fillRect(grid[i].x, grid[i].y, scale, scale);
+
+                    if (!grid[i].mine) {
+                        context.fillStyle = '#000';
+                        context.font = '30px Arial';
+                        context.textAlign = 'center';
+                        context.textBaseline = 'middle';
+                        if (grid[i].neighbors != 0)
+                            context.fillText(grid[i].neighbors, grid[i].x + scale / 2, grid[i].y + scale / 2);
+                    } else {
+                        context.fillStyle = '#000';
+                        context.beginPath();
+                        context.ellipse(grid[i].x + scale / 2, grid[i].y + scale / 2, scale * 1 / 5, scale * 1 / 5,
+                            0, 0, Math.PI * 2);
+                        context.closePath();
+                        context.fill();
+                    }
+                } else if (grid[i].flagged) {
+                    context.fillStyle = '#ccc';
+                    context.fillRect(grid[i].x, grid[i].y, scale, scale);
+
+                    context.fillStyle = '#aaa';
+                    context.beginPath();
+                    context.ellipse(grid[i].x + scale / 2, grid[i].y + scale / 2, scale * 1 / 5, scale * 1 / 5,
+                        0, 0, Math.PI * 2);
+                    context.closePath();
+                    context.fill();
+                    context.stroke();
+                } else {
+                    context.fillStyle = '#ccc';
+                    context.fillRect(grid[i].x, grid[i].y, scale, scale);
+                }
+
+                context.strokeRect(grid[i].x, grid[i].y, scale, scale);
+
+                if (gameOver) {
+                    context.fillStyle = '#000';
+                    context.font = '75px Arial';
+                    context.textAlign = 'center';
+                    context.textBaseline = 'middle';
+                    context.fillText('Game Over', canvas.width / 2, canvas.height / 2);
+                }
+            }
+
+            requestAnimationFrame(loop);
+        }
+    </script>
+</body>
+
+</html>
