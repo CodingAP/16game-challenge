@@ -1,0 +1,110 @@
+<html>
+
+<head>
+    <title>Arkanoid: 4/16</title>
+</head>
+
+<body>
+    <canvas id="arkanoid" width="800" height="600"></canvas>
+    <script>
+        let canvas = document.getElementById('arkanoid');
+        let context = canvas.getContext('2d');
+
+        let bricks = [];
+
+        for (let y = 0; y < 10; y++) {
+            for (let x = 0; x < 15; x++) {
+                bricks[y * 15 + x] = {
+                    x: 25 + (50 * x),
+                    y: 25 + (20 * y)
+                }
+            }
+        }
+
+        let paddleX = 200;
+        let paddleSpd = 0;
+        let ball = {
+            x: 400,
+            y: 500,
+            vel: {
+                x: 5,
+                y: -4
+            }
+        }
+
+        document.addEventListener('keydown', event => {
+            if (event.key == 'a') paddleSpd = -5;
+            if (event.key == 'd') paddleSpd = 5;
+        })
+
+        document.addEventListener('keyup', event => {
+            if (event.key == 'a' || event.key == 'd') paddleSpd = 0;
+        })
+
+        window.onload = () => {
+            loop();
+        }
+
+        let loop = () => {
+            context.fillStyle = '#aaa';
+            context.fillRect(0, 0, canvas.width, canvas.height);
+
+            for (let i = 0; i < bricks.length; i++) {
+                if (bricks[i]) {
+                    context.fillStyle = '#f00';
+                    context.fillRect(bricks[i].x, bricks[i].y, 50, 20);
+
+                    context.strokeStyle = '#fff';
+                    context.strokeRect(bricks[i].x, bricks[i].y, 50, 20);
+                }
+            }
+
+            context.fillStyle = '#0f0';
+            context.beginPath();
+            context.ellipse(ball.x, ball.y, 10, 10, 0, 0, Math.PI * 2);
+            context.closePath();
+            context.fill();
+
+            context.fillStyle = '#000';
+            context.fillRect(paddleX, 575, 100, 20);
+
+            paddleX += paddleSpd;
+
+            if (ball.x + 10 > canvas.width || ball.x - 10 < 0) ball.vel.x *= -1;
+            if (ball.y - 10 < 0) ball.vel.y *= -1;
+
+            if (ball.y + 10 > 575 && ball.x > paddleX && ball.x < paddleX + 100) {
+                ball.vel.x *= (Math.random() > 0.5) ? -1 : 1;
+                ball.vel.y *= -1;
+            }
+
+            for (let i = 0; i < bricks.length; i++) {
+                if (bricks[i]) {
+                    if (ball.x + 10 + ball.vel.x > bricks[i].x &&
+                        ball.x - 10 + ball.vel.x < bricks[i].x + 50 &&
+                        ball.y + 10 > bricks[i].y &&
+                        ball.y - 10 < bricks[i].y + 20) {
+                        bricks[i] = null;
+                        ball.vel.x *= -1;
+                        break;
+                    }
+                    if (ball.x + 10 > bricks[i].x &&
+                        ball.x - 10 < bricks[i].x + 50 &&
+                        ball.y + 10 + ball.vel.y > bricks[i].y &&
+                        ball.y - 10 + ball.vel.y < bricks[i].y + 20) {
+                        bricks[i] = null;
+                        ball.vel.y *= -1;
+                        break;
+                    }
+                }
+            }
+
+            ball.x += ball.vel.x;
+            ball.y += ball.vel.y;
+
+            requestAnimationFrame(loop);
+        }
+    </script>
+</body>
+
+</html>
