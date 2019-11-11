@@ -1,0 +1,137 @@
+<html>
+
+<head>
+    <title>Snake: 5/16</title>
+</head>
+
+<body>
+    <canvas id="snake" width="600" height="600"></canvas>
+    <script>
+        let canvas = document.getElementById('snake');
+        let context = canvas.getContext('2d');
+
+        let scale = 25,
+            frames = 0;
+        let width = canvas.width / scale,
+            height = canvas.height / scale;
+        let snake = {
+            head: {
+                x: 10,
+                y: 10
+            },
+            body: [],
+            eaten: false,
+            dir: {
+                x: 1,
+                y: 0
+            }
+        }
+        let food = {
+            x: Math.floor(Math.random() * width),
+            y: Math.floor(Math.random() * height)
+        }
+
+        for (let i = 0; i < 4; i++) {
+            snake.body[i] = {
+                x: 6 + i,
+                y: 10
+            };
+        }
+
+        document.addEventListener('keydown', event => {
+            if (event.key == 'w') snake.dir = {
+                x: 0,
+                y: -1
+            };
+            if (event.key == 's') snake.dir = {
+                x: 0,
+                y: 1
+            };
+            if (event.key == 'a') snake.dir = {
+                x: -1,
+                y: 0
+            };
+            if (event.key == 'd') snake.dir = {
+                x: 1,
+                y: 0
+            };
+        })
+
+        window.onload = () => {
+            loop();
+        }
+
+        let loop = () => {
+            frames++;
+            if (frames > 5) {
+                context.clearRect(0, 0, canvas.width, canvas.height);
+
+                for (let i = 0; i < snake.body.length; i++) {
+                    context.fillStyle = '#f00';
+                    context.fillRect(snake.body[i].x * scale, snake.body[i].y * scale, scale, scale);
+                }
+
+                context.fillStyle = '#0f0';
+                context.fillRect(food.x * scale, food.y * scale, scale, scale);
+
+                for (let y = 0; y < height; y++) {
+                    for (let x = 0; x < width; x++) {
+                        context.strokeStyle = '#000';
+                        context.strokeRect(x * scale, y * scale, scale, scale);
+                    }
+                }
+
+                snake.head.x += snake.dir.x
+                snake.head.y += snake.dir.y
+                snake.body.push({
+                    x: snake.head.x,
+                    y: snake.head.y
+                })
+                if (!snake.eaten) {
+                    snake.body.shift();
+                } else {
+                    snake.eaten = false;
+                }
+
+                if (snake.head.x == food.x && snake.head.y == food.y) {
+                    snake.eaten = true;
+                    food = {
+                        x: Math.floor(Math.random() * width),
+                        y: Math.floor(Math.random() * height)
+                    }
+                }
+
+                for (let i = 0; i < snake.body.length - 1; i++) {
+                    if (snake.head.x == snake.body[i].x && snake.head.y == snake.body[i].y) {
+                        snake = {
+                            head: {
+                                x: 10,
+                                y: 10
+                            },
+                            body: [],
+                            eaten: false,
+                            dir: {
+                                x: 1,
+                                y: 0
+                            }
+                        }
+
+                        for (let i = 0; i < 5; i++) {
+                            snake.body[i] = {
+                                x: 6 + i,
+                                y: 10
+                            };
+                        }
+
+                        break;
+                    }
+                }
+                frames = 0;
+            }
+
+            requestAnimationFrame(loop);
+        }
+    </script>
+</body>
+
+</html>
