@@ -1,0 +1,121 @@
+<html>
+
+<head>
+    <title>15-Puzzle: 6/16</title>
+</head>
+
+<body>
+    <canvas id="15-puzzle" width="600" height="600"></canvas>
+    <script>
+        let canvas = document.getElementById('15-puzzle');
+        let context = canvas.getContext('2d');
+
+        let scale = 150;
+        let width = canvas.width / scale,
+            height = canvas.height / scale;
+        let puzzle = new Array(width * height);
+
+        for (let i = 0; i <= 15; i++) {
+            puzzle[i] = (i + 1);
+        }
+        puzzle[15] = 0;
+
+        let checkMouse = (mouseX, mouseY, x, y) => {
+            return (mouseX > x * scale && mouseX < x * scale + scale && mouseY > y * scale && mouseY < y * scale +
+                scale);
+        }
+
+        let checkSquare = (x, y) => {
+            return !(x < 0 || x >= width || y < 0 || y >= height);
+        }
+
+        let shuffle = () => {
+            for (let i = 0; i < 1000; i++) {
+                let index = -1;
+                for (let i = 0; i < puzzle.length; i++) {
+                    if (puzzle[i] == 0) index = i;
+                }
+                let zero = {
+                    x: index % height,
+                    y: Math.floor(index / width)
+                };
+                let random = Math.floor(Math.random() * 4);
+                if (checkSquare(zero.x - 1, zero.y) && random == 0) {
+                    let temp = puzzle[zero.y * width + (zero.x - 1)];
+                    puzzle[zero.y * width + (zero.x - 1)] = 0;
+                    puzzle[zero.y * width + zero.x] = temp;
+                } else if (checkSquare(zero.x + 1, zero.y) && random == 1) {
+                    let temp = puzzle[zero.y * width + (zero.x + 1)];
+                    puzzle[zero.y * width + (zero.x + 1)] = 0;
+                    puzzle[zero.y * width + zero.x] = temp;
+                } else if (checkSquare(zero.x, zero.y - 1) && random == 2) {
+                    let temp = puzzle[(zero.y - 1) * width + zero.x];
+                    puzzle[(zero.y - 1) * width + zero.x] = 0;
+                    puzzle[zero.y * width + zero.x] = temp;
+                } else if (checkSquare(zero.x, zero.y + 1) && random == 3) {
+                    let temp = puzzle[(zero.y + 1) * width + zero.x];
+                    puzzle[(zero.y + 1) * width + zero.x] = 0;
+                    puzzle[zero.y * width + zero.x] = temp;
+                }
+            }
+        }
+
+        document.addEventListener('mousedown', event => {
+            let rect = canvas.getBoundingClientRect();
+            let mouseX = event.clientX - rect.left;
+            let mouseY = event.clientY - rect.top;
+            let index = -1;
+            for (let i = 0; i < puzzle.length; i++) {
+                if (puzzle[i] == 0) index = i;
+            }
+            let zero = {
+                x: index % height,
+                y: Math.floor(index / width)
+            };
+            if (checkMouse(mouseX, mouseY, zero.x - 1, zero.y)) {
+                let temp = puzzle[zero.y * width + (zero.x - 1)];
+                puzzle[zero.y * width + (zero.x - 1)] = 0;
+                puzzle[zero.y * width + zero.x] = temp;
+            } else if (checkMouse(mouseX, mouseY, zero.x + 1, zero.y)) {
+                let temp = puzzle[zero.y * width + (zero.x + 1)];
+                puzzle[zero.y * width + (zero.x + 1)] = 0;
+                puzzle[zero.y * width + zero.x] = temp;
+            } else if (checkMouse(mouseX, mouseY, zero.x, zero.y - 1)) {
+                let temp = puzzle[(zero.y - 1) * width + zero.x];
+                puzzle[(zero.y - 1) * width + zero.x] = 0;
+                puzzle[zero.y * width + zero.x] = temp;
+            } else if (checkMouse(mouseX, mouseY, zero.x, zero.y + 1)) {
+                let temp = puzzle[(zero.y + 1) * width + zero.x];
+                puzzle[(zero.y + 1) * width + zero.x] = 0;
+                puzzle[zero.y * width + zero.x] = temp;
+            }
+        });
+
+        window.onload = () => {
+            shuffle();
+            loop();
+        }
+
+        let loop = () => {
+            context.clearRect(0, 0, canvas.width, canvas.height);
+
+            for (let y = 0; y < height; y++) {
+                for (let x = 0; x < width; x++) {
+                    context.strokeStyle = '#000';
+                    context.strokeRect(x * scale, y * scale, scale, scale);
+
+                    context.fillStyle = '#000';
+                    context.font = '50px Arial';
+                    context.textAlign = 'center';
+                    context.textBaseline = 'middle';
+                    if (puzzle[y * width + x] != 0)
+                        context.fillText(puzzle[y * width + x], x * scale + scale / 2, y * scale + scale / 2)
+                }
+            }
+
+            requestAnimationFrame(loop);
+        }
+    </script>
+</body>
+
+</html>
